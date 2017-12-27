@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+*.so
+*.swp
+3rdparty/usbreset
