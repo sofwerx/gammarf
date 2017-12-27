@@ -273,6 +273,7 @@ def cmdloop(grfstate):
     gammarf_util.console_message("Type 'quit' to quit", showdt=False)
 
     # system commands
+    commands['help'] = cmd_help
     commands['interesting'] = cmd_interesting
     commands['interesting_add'] = cmd_interesting_add
     commands['interesting_del'] = cmd_interesting_del
@@ -282,6 +283,7 @@ def cmdloop(grfstate):
     commands['now'] = cmd_now
     commands['pwr'] = cmd_pwr
     commands['quit'] = cmd_quit
+    commands['run'] = cmd_run
     commands['settings'] = cmd_settings
     commands['stations'] = cmd_stations
 
@@ -334,7 +336,7 @@ def cmd_help(commands):
 
     output = []
     for cmd, function in commands.items():
-        output.append("{:10s}| {}".format(cmd, function.__doc__))
+        output.append("{:18s}| {}".format(cmd, function.__doc__))
     output.sort()
 
     gammarf_util.console_message()
@@ -573,7 +575,7 @@ def cmd_settings_usage():
     gammarf_util.console_message("usage: > settings module [setting]")
 
 def cmd_settings(grfstate, args):
-    """Show or toggle a setting for a module: > settings module [setting]"""
+    """Show / toggle a module's settings: > settings module [setting]"""
 
     config = grfstate.config
     loadedmods = grfstate.loadedmods
