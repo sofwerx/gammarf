@@ -23,6 +23,7 @@ import time
 import gammarf_util
 from gammarf_base import GrfModuleBase
 
+ABORT_DELAY = 2
 GO_DELAY = 2  # don't change this
 GO_SLEEP = 2  # don't change this
 MOD_NAME = "tdoa"
@@ -38,23 +39,6 @@ TDOA_MAX_FREQ = 1.6e9
 TDOA_MIN_FREQ = 30e6
 
 
-
-
-
-#
-#
-#
-#       refactor to use one stick with contrib library from the example site online
-#       don't have to worry about ppm, save a stick, etc
-
-#
-
-
-
-
-
-
-
 def start(config):
     return GrfModuleTdoa(config)
 
@@ -65,7 +49,6 @@ class Tdoa(threading.Thread):
         self.stoprequest = threading.Event()
 
         self.devid = opts['devid']
-        self.dev2 = opts['dev2']
 
         self.connector = system_mods['connector']
         self.devmod = system_mods['devices']
@@ -81,20 +64,23 @@ class Tdoa(threading.Thread):
                 time.sleep(QUERY_SLEEP)
                 continue
 
-            requestor = resp['requestor']
-            tdoafreq = resp['tdoafreq']
+            try:
+                requestor = resp['requestor']
+                tdoafreq = resp['tdoafreq']
+            except KeyError:
+                continue
 
             if tdoafreq < TDOA_MIN_FREQ or tdoafreq > TDOA_MAX_FREQ:
                 req = {'request': REQ_TDOA_REJECT, 'requestor': requestor}
                 resp = self.connector.sendcmd(req)
-                time.sleep(2)
+                time.sleep(ABORT_DELAY)
                 continue
 
             # we will accept this tdoa task
             req = {'request': REQ_TDOA_ACCEPT, 'requestor': requestor}
             resp = self.connector.sendcmd(req)
             if resp['reply'] != 'ok':
-                time.sleep(2)
+                time.sleep(ABORT_DELAY)
                 continue
 
             # wait for other stations to accept / reject as well
@@ -104,8 +90,24 @@ class Tdoa(threading.Thread):
             req = {'request': REQ_TDOA_GO}
             resp = self.connector.sendcmd(req)
             if resp['reply'] != 'go':
-                time.sleep(2)
+                time.sleep(ABORT_DELAY)
                 continue
+
+
+
+
+
+
+
+
+            ### server will answer with which refxmtr to use in 'go'
+            # (the highest powered 3 probably)
+            # when you plug in a pi do wireless first and see if disconnects, then moved to wired and compare (enable message output)
+            refxmtr = resp['']
+
+
+
+
 
             if self.settings['print_tasks']:
                 gammarf_util.console_message("targeting {} for {}"
@@ -113,15 +115,25 @@ class Tdoa(threading.Thread):
 
             time.sleep(GO_DELAY)  # wait for other stations
 
-            # different threads for both radios
-            # don't forget to set gain, ppm, and freq offset if they're defined for this stick in conf (get defaults for gain/ppm otherwise)
-            # make sure you don't go to the above accept task loop until all data is sent to the server (job finished)
-            # scan for enough time that there's bound to be overlap w/ the other stations
-            # do all the work here.  final one has a 'fin' so it can trigger server-side relay
-            #try:
-            #    self.connector.senddat(data)
-            #except:
-            #    pass
+
+
+
+
+            # set gain, ppm, and freq offset if defined in conf (use devmod)
+            # scan for enough time that there's bound to be enough overlap w/ the other stations' data
+            # don't go back to the top of the while loop until all data is send to the server
+            # final has 'fin' so it can trigger the server-side relay
+
+
+
+
+
+
+
+
+
+
+
 
         return
 
@@ -133,8 +145,7 @@ class Tdoa(threading.Thread):
 class GrfModuleTdoa(GrfModuleBase):
     """ TDOA: Work with other stations to locate a transmitter
 
-        Usage: run tdoa devid devid
-            (module requires two rtl-sdr devices)
+        Usage: run tdoa devid
         or: tdoa station1 station2 station3 150M
 
         Example: run tdoa 0 1
@@ -221,15 +232,6 @@ class GrfModuleTdoa(GrfModuleBase):
 
         if self.worker:
             gammarf_util.console_message("module already running", MOD_NAME)
-            return
-
-        if not cmdline:
-            gammarf_util.console_message(self.__doc__)
-            return
-
-        args = cmdline.split(None)
-        if not args:
-            gammarf_util.console_message(self.__doc__)
             return
 
         if self.worker:
