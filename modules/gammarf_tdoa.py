@@ -52,7 +52,7 @@ class Tdoa(threading.Thread):
 
         self.connector = system_mods['connector']
         self.devmod = system_mods['devices']
-        self.sysdevid = self.devmod.get_sysdevid(devid)
+        self.sysdevid = self.devmod.get_sysdevid(self.devid)
 
         self.settings = settings
 
