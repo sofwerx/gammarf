@@ -30,7 +30,9 @@ from uuid import uuid4
 import gammarf_util
 from gammarf_base import GrfModuleBase
 
-CMD_POLL_TIMEOUT = 1000  # ms
+CMD_POLL_TIMEOUT = 1500  # ms
+CMD_ATTEMPTS = 2
+CMD_ATTEMPT_FAIL_SLEEP = 2
 HEARTBEAT_INT = 10
 LOOP_SLEEP = 0.5
 MOD_NAME = "connector"
@@ -68,7 +70,7 @@ class ConnectorWorker(threading.Thread):
         self.connected = False
         self.connect_message = None
         self.poller = None
-        announce_reconnects = False
+        announce_reconnects = True
         connect_attempted = False
         lost_connection = False
         since_heartbeat = None
@@ -231,34 +233,44 @@ class ConnectorWorker(threading.Thread):
                     .encode('utf-8'))
             data['sign'] = m.hexdigest()[:12]
 
-            try:
-                self.cmdsock.send_string(json.dumps(data), zmq.NOBLOCK)
+            for i in range(CMD_ATTEMPTS):
+                try:
+                    self.cmdsock.send_string(json.dumps(data), zmq.NOBLOCK)
+                    break
 
-            except Exception as e:
-                self.connected = False
-                self.connect_message = "error sending to command socket: "\
-                        "{}".format(e)
+                except Exception as e:
+                    if i == CMD_ATTEMPTS - 1:
+                        self.connected = False
+                        self.connect_message = "error sending to command socket: "\
+                                "{}".format(e)
 
-                return {'reply': 'error', 'error': 'txerror'}
+                        return {'reply': 'error', 'error': 'txerror'}
 
-            else:
+                    time.sleep(CMD_ATTEMPT_FAIL_SLEEP)
+                    continue
+
+            for i in range(CMD_ATTEMPTS):
                 l = dict(self.poller.poll(CMD_POLL_TIMEOUT))
                 if l.get(self.cmdsock) == zmq.POLLIN:
                     try:
                         resp = json.loads(self.cmdsock.recv_string())
+                        return resp
 
                     except Exception as e:
-                        self.connected = False
-                        self.connect_message = "error receiving from "\
-                                "command socket: {}".format(e)
+                        if i == CMD_ATTEMPTS - 1:
+                            self.connected = False
+                            self.connect_message = "error receiving from "\
+                                    "command socket: {}".format(e)
 
-                        return {'reply': 'error', 'error': 'rxerror'}
-
-                    return resp
+                            return {'reply': 'error', 'error': 'rxerror'}
 
                 else:
-                    self.connected = False
-                    return {'reply': 'error', 'error': 'noresp'}
+                    if i == CMD_ATTEMPTS - 1:
+                        self.connected = False
+                        return {'reply': 'error', 'error': 'noresp'}
+
+                    time.sleep(CMD_ATTEMPT_FAIL_SLEEP)
+                    continue
 
     def join(self, timeout=None):
         self.stoprequest.set()
