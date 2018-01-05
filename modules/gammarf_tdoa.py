@@ -35,8 +35,8 @@ REQ_TDOA_GO = 9
 REQ_TDOA_PUT = 5
 REQ_TDOA_QUERY = 6
 REQ_TDOA_REJECT = 7
-TDOA_MAX_FREQ = 1.6e9
-TDOA_MIN_FREQ = 30e6
+TDOA_MAX_FREQ = int(1.6e9)
+TDOA_MIN_FREQ = int(30e6)
 
 
 def start(config):
@@ -93,25 +93,16 @@ class Tdoa(threading.Thread):
                 time.sleep(ABORT_DELAY)
                 continue
 
-
-
-
-
-
-
-
-            ### server will answer with which refxmtr to use in 'go'
-            # (the highest powered 3 probably)
-            # when you plug in a pi do wireless first and see if disconnects, then moved to wired and compare (enable message output)
-            refxmtr = resp['']
-
-
-
-
+            refxmtr = resp['refxmtr']
+            try:
+                refxmtr = int(refxmtr)
+            except:
+                time.sleep(ABORT_DELAY)
+                continue
 
             if self.settings['print_tasks']:
-                gammarf_util.console_message("targeting {} for {}"
-                .format(tdoafreq, requestor), MOD_NAME)
+                gammarf_util.console_message("targeting {} for {} (refxmtr: {})"
+                .format(tdoafreq, requestor, refxmtr), MOD_NAME)
 
             time.sleep(GO_DELAY)  # wait for other stations
 
@@ -120,7 +111,7 @@ class Tdoa(threading.Thread):
 
 
             # set gain, ppm, and freq offset if defined in conf (use devmod)
-            # scan for enough time that there's bound to be enough overlap w/ the other stations' data
+            # scan for enough time that there's bound to be enough overlap w/ the other stations' data: refxmtr then target
             # don't go back to the top of the while loop until all data is send to the server
             # final has 'fin' so it can trigger the server-side relay
 
@@ -208,7 +199,7 @@ class GrfModuleTdoa(GrfModuleBase):
 
     def request_help(self):
         gammarf_util.console_message(
-                "usage: tdoa station1 station2 station3 freq(MHz)")
+                "usage: tdoa station1 station2 station3 freq")
         return
 
     # Commands we provide
