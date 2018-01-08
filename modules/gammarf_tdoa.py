@@ -183,7 +183,7 @@ class GrfModuleTdoa(GrfModuleBase):
 
         resp = connector.sendcmd(data)
         if resp['reply']  == 'ok':
-            gammarf_util.console_message("request accepted", MOD_NAME)
+            gammarf_util.console_message("request sent", MOD_NAME)
         else:
             if resp['error'] == 'invalid station':
                 gammarf_util.console_message("invalid station: {}"

@@ -159,7 +159,8 @@ class ConnectorWorker(threading.Thread):
                 data['running'] = json.dumps([
                         ["{}".format(job[0]), "{}".format(job[1] if job[1]
                             else "noargs"), "{}".format(job[2])]
-                        for job in self.devmod.running() if job != self.devmod.get_hackrf_job()])
+                        for job in self.devmod.running()\
+                                if job != self.devmod.get_hackrf_job()])
                 data['gpsstat'] = self.gps_worker.get_status()
 
                 data['rand'] = str(uuid4())[:8]
@@ -184,11 +185,16 @@ class ConnectorWorker(threading.Thread):
                                         MOD_NAME)
                             lost_connection = False
 
-                        if 'message' in resp:
-                            gammarf_util.console_message(
-                                    "message from {}: {} @ {}"
-                                    .format(resp['sender'], resp['message'],
-                                        resp['ts']), MOD_NAME)
+                        if 'messages' in resp:
+                            messages = resp['messages']
+                            while messages:
+                                ts = messages.pop(0)
+                                frm = messages.pop(0)
+                                msg = messages.pop(0)
+                                gammarf_util.console_message(
+                                        "message from {}: {} @ {}"
+                                        .format(ts, frm, msg),
+                                        MOD_NAME)
 
                     else:
                         self.connected = False
