@@ -60,7 +60,6 @@ class Scanner(threading.Thread):
         data['protocol'] = PROTOCOL_VERSION
 
         freqmap = {}
-        initial_announced = False
         notified_nofreqs = False
         since_interesting_refresh = None
 
@@ -131,11 +130,10 @@ class Scanner(threading.Thread):
                 fent['stdev'] = math.sqrt(fent['S']/fent['n'])
 
                 if fent['n'] >= AVG_SAMPLES:
-                    if fent['n'] == AVG_SAMPLES and not initial_announced:
+                    if fent['n'] == AVG_SAMPLES:
                         gammarf_util.console_message(
-                                "initial means formulated",
+                                "initial means formulated for {}".format(freq),
                                 MOD_NAME)
-                        initial_announced = True
 
                     squelch = fent['mean'] + self.settings['hit_db']
                     if pwr > squelch:
