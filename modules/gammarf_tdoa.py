@@ -78,7 +78,7 @@ class Tdoa(threading.Thread):
             tdoa_max_freq = self.devmod.get_rtlsdr_maxfreq(self.devid)
             tdoa_min_freq = self.devmod.get_rtlsdr_minfreq(self.devid)
 
-            if tdoafreq < TDOA_MIN_FREQ or tdoafreq > TDOA_MAX_FREQ:
+            if tdoafreq < tdoa_min_freq or tdoafreq > tdoa_max_freq:
                 req = {'request': REQ_TDOA_REJECT, 'requestor': requestor}
                 resp = self.connector.sendcmd(req)
                 time.sleep(ABORT_DELAY)
