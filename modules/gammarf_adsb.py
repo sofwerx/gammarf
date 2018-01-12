@@ -46,8 +46,8 @@ class Adsb(threading.Thread):
 
         self.connector = system_mods['connector']
         devmod = system_mods['devices']
-        gain = devmod.get_gain(devid)
-        ppm = devmod.get_ppm(devid)
+        gain = devmod.get_rtlsdr_gain(devid)
+        ppm = devmod.get_rtlsdr_ppm(devid)
         sysdevid = devmod.get_sysdevid(devid)
 
         self.settings = settings
