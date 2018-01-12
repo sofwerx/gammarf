@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import threading
 import time
 from subprocess import Popen, PIPE
@@ -50,13 +51,13 @@ class Tdoa(threading.Thread):
 
         self.cmd = opts['cmd']
         self.devid = opts['devid']
-        self.gain = self.devmod.get_gain(self.devid)
-        self.offset = self.devmod.get_rtlsdr_offset(self.devid)
-        self.ppm = self.devmod.get_rtlsdr_ppm(self.devid)
 
         self.connector = system_mods['connector']
         self.devmod = system_mods['devices']
         self.sysdevid = self.devmod.get_sysdevid(self.devid)
+        self.gain = self.devmod.get_gain(self.devid)
+        self.offset = self.devmod.get_rtlsdr_offset(self.devid)
+        self.ppm = self.devmod.get_rtlsdr_ppm(self.devid)
 
         self.settings = settings
 
@@ -170,7 +171,7 @@ class GrfModuleTdoa(GrfModuleBase):
 
         command = rtl_2freq_path + '/' + 'rtl_sdr'
         if not os.path.isfile(command) or not os.access(command, os.X_OK):
-            raise Exception("executable rtl_adsb not found in specified path")
+            raise Exception("executable rtl_sdr not found in specified path")
 
         self.device_list = ["rtlsdr"]
         self.description = "tdoa module"
