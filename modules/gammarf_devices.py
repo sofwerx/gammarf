@@ -319,13 +319,25 @@ class GrfModuleDevices(GrfModuleBase):
     def get_numdevs(self):
         return self.numdevs
 
-    def get_offset(self, devid):
+    def get_rtlsdr_maxfreq(self, devid):
+        dev = self.devs[devid]
+        if dev.devtype == 'rtlsdr':
+            return dev.maxfreq
+        return
+
+    def get_rtlsdr_minfreq(self, devid):
+        dev = self.devs[devid]
+        if dev.devtype == 'rtlsdr':
+            return dev.minfreq
+        return
+
+    def get_rtlsdr_offset(self, devid):
         dev = self.devs[devid]
         if dev.devtype == 'rtlsdr':
             return dev.offset
         return
 
-    def get_ppm(self, devid):
+    def get_rtlsdr_ppm(self, devid):
         dev = self.devs[devid]
         if dev.devtype == 'rtlsdr':
             return dev.ppm

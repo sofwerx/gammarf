@@ -34,7 +34,7 @@ CONF_FILE = 'gammarf.conf'
 PSEUDO_DEVNUM_BASE = 9000
 REQ_MESSAGE = 4
 SYSTEM_MODS    = ['connector', 'devices', 'location', 'spectrum']
-VERSION_STRING = "ΓRF, Copyright 2017 (gammarf |at| covert.codes)"
+VERSION_STRING = "ΓRF, Copyright 2018 (gammarf |at| covert.codes)"
 
 MODPATH        = 'modules'
 MOD_PREFIX     = 'gammarf_'

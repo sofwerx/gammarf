@@ -19,6 +19,7 @@
 
 import threading
 import time
+from subprocess import Popen, PIPE
 
 import gammarf_util
 from gammarf_base import GrfModuleBase
@@ -35,8 +36,7 @@ REQ_TDOA_GO = 9
 REQ_TDOA_PUT = 5
 REQ_TDOA_QUERY = 6
 REQ_TDOA_REJECT = 7
-TDOA_MAX_FREQ = int(1.6e9)
-TDOA_MIN_FREQ = int(30e6)
+SAMPLES = 1e3  # don't change this
 
 
 def start(config):
@@ -48,7 +48,11 @@ class Tdoa(threading.Thread):
         threading.Thread.__init__(self)
         self.stoprequest = threading.Event()
 
+        self.cmd = opts['cmd']
         self.devid = opts['devid']
+        self.gain = self.devmod.get_gain(self.devid)
+        self.offset = self.devmod.get_rtlsdr_offset(self.devid)
+        self.ppm = self.devmod.get_rtlsdr_ppm(self.devid)
 
         self.connector = system_mods['connector']
         self.devmod = system_mods['devices']
@@ -69,6 +73,9 @@ class Tdoa(threading.Thread):
                 tdoafreq = resp['tdoafreq']
             except KeyError:
                 continue
+
+            tdoa_max_freq = self.devmod.get_rtlsdr_maxfreq(self.devid)
+            tdoa_min_freq = self.devmod.get_rtlsdr_minfreq(self.devid)
 
             if tdoafreq < TDOA_MIN_FREQ or tdoafreq > TDOA_MAX_FREQ:
                 req = {'request': REQ_TDOA_REJECT, 'requestor': requestor}
@@ -101,26 +108,36 @@ class Tdoa(threading.Thread):
                 continue
 
             if self.settings['print_tasks']:
-                gammarf_util.console_message("targeting {} for {} (refxmtr: {})"
+                gammarf_util.console_message("targeting {} for {} "\
+                        "(refxmtr: {})"
                 .format(tdoafreq, requestor, refxmtr), MOD_NAME)
 
             time.sleep(GO_DELAY)  # wait for other stations
 
+            refxmtr = refxmtr + self.offset
+            tdoafreq = tdoafreq + self.offset
+
+            # need a job uuid
+            jobid = resp['jobid']
+            outfile = '/tmp/'+jobid+'.tdoa'
+
+            ON_POSIX = 'posix' in builtin_module_names
+            self.cmdpipe = Popen([self.cmd, "-d {}".format(self.sysdevid),
+                "-p {}".format(self.ppm), "-g {}".format(self.gain),
+                "-f {}".format(refxmtr), "-h {}".format(tdoafreq),
+                "-n {}".format(SAMPLES), outfile], stdout=PIPE,
+                close_fds=ON_POSIX)
 
 
-
-
-            # set gain, ppm, and freq offset if defined in conf (use devmod)
-            # scan for enough time that there's bound to be enough overlap w/ the other stations' data: refxmtr then target
-            # don't go back to the top of the while loop until all data is send to the server
-            # final has 'fin' so it can trigger the server-side relay
-
-
-
-
-
-
-
+            # in the command make sure right dev, ppm etc. show up in the cmd string (ps)
+            # save to file in /tmp w/ the uuid name
+            # server has an sftp port (see gammarf.conf) that accepts only puts, clients put file w/ uuid before referencing, put-only server and uuid file names so secure (?)
+                # scp copies to /tmp for example (server default and restriction)
+            # sftp/scp to server
+            # send 'fin' w/ uuid so it can trigger the server-side relay
+            # delete the tmp file
+            # don't go back to the top of the while loop until all data is sent to the server
+            # make sure you include the new conf format in the repo
 
 
 
@@ -139,7 +156,7 @@ class GrfModuleTdoa(GrfModuleBase):
         Usage: run tdoa devid
         or: tdoa station1 station2 station3 150M
 
-        Example: run tdoa 0 1
+        Example: run tdoa 1
         Example: tdoa stn01 stn02 stn03 150M
 
         Settings:
@@ -147,10 +164,19 @@ class GrfModuleTdoa(GrfModuleBase):
     """
 
     def __init__(self, config):
+        if not 'rtl_2freq_path' in config['rtldevs']:
+            raise Exception("'rtl_2freq_path' not appropriately defined in config")
+        rtl_2freq_path = config['rtldevs']['rtl_2freq_path']
+
+        command = rtl_2freq_path + '/' + 'rtl_sdr'
+        if not os.path.isfile(command) or not os.access(command, os.X_OK):
+            raise Exception("executable rtl_adsb not found in specified path")
+
         self.device_list = ["rtlsdr"]
         self.description = "tdoa module"
         self.settings = {'print_tasks': True}
         self.worker = None
+        self.cmd = command
 
         self.thread_timeout = 3
 
@@ -230,7 +256,7 @@ class GrfModuleTdoa(GrfModuleBase):
                 "module already running (one allowed per node)")
             return
 
-        opts = {'devid': devid}
+        opts = {'cmd': self.cmd, 'devid': devid}
 
         self.worker = Tdoa(opts, self.system_mods, self.settings)
         self.worker.daemon = True

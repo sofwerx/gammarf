@@ -1,3 +1,6 @@
 
 - pylibhackrf is a modified version of this: https://github.com/wzyy2/py-hackrf-ctypes
+
 - usbreset.c: https://askubuntu.com/questions/645/how-do-you-reset-a-usb-device-from-the-command-line
+
+- librtlsdr-2freq: https://github.com/DC9ST/librtlsdr-2freq
