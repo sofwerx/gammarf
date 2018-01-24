@@ -192,8 +192,8 @@ class ConnectorWorker(threading.Thread):
                                 frm = messages.pop(0)
                                 msg = messages.pop(0)
                                 gammarf_util.console_message(
-                                        "message from {}: {} @ {}"
-                                        .format(ts, frm, msg),
+                                        "message from {} @ {}: {}"
+                                        .format(frm, ts, msg),
                                         MOD_NAME)
 
                     else:
