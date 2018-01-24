@@ -76,8 +76,11 @@ class SpectrumWorker(threading.Thread):
         firstfreq = None
         total_freqs = 0
         while True:
-            reclen, start, end = struct.unpack('=iqq',
-                    self.cmdpipe.stdout.read(20))
+            try:
+                reclen, start, end = struct.unpack('=iqq',
+                        self.cmdpipe.stdout.read(20))
+            except:
+                raise Exception("Problem communicating with HACKRF - exit and restart")
 
             if not firstfreq:
                 firstfreq = start
@@ -92,20 +95,31 @@ class SpectrumWorker(threading.Thread):
                 self.step = int((end - start) / pwr_entries)
                 self.devmod.set_hackrf_step(self.step)
 
-            self.cmdpipe.stdout.read(HRF_PWR_BYTES * pwr_entries)
+            try:
+                self.cmdpipe.stdout.read(HRF_PWR_BYTES * pwr_entries)
+            except:
+                raise Exception("Problem communicating with HACKRF - exit and restart")
+
             total_freqs += pwr_entries
 
         self.freqmap = np.empty(total_freqs)
         while not self.stoprequest.isSet():
-            pwrs = self.cmdpipe.stdout.read(HRF_PWR_BYTES * pwr_entries)
+            try:
+                pwrs = self.cmdpipe.stdout.read(HRF_PWR_BYTES * pwr_entries)
+            except:
+                raise Exception("Problem communicating with HACKRF - exit and restart")
+
             unpacked = list(struct.unpack('{}f'.format(pwr_entries), pwrs))
 
             substart = int((start - firstfreq)/self.step)
             substop = substart + pwr_entries
             self.freqmap[substart:substop] = list(unpacked)
 
-            reclen, start, end = struct.unpack('=iqq',
-                    self.cmdpipe.stdout.read(20))
+            try:
+                reclen, start, end = struct.unpack('=iqq',
+                        self.cmdpipe.stdout.read(20))
+            except:
+                raise Exception("Problem communicating with HACKRF - exit and restart")
 
             if start == firstfreq:
                 if not self.freqmap_ready:
