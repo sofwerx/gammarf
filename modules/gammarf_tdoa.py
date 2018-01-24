@@ -126,7 +126,6 @@ class Tdoa(threading.Thread):
             now = int(time.time())
             while now < gotick:
                 now = int(time.time())
-                print("gotick: {}, now: {}".format(gotick, now))
                 time.sleep(.001)
                 continue
 
@@ -140,7 +139,7 @@ class Tdoa(threading.Thread):
                 "-n {}".format(SAMPLES), outfile], stdout=PIPE,
                 close_fds=ON_POSIX)
 
-            # stop (collect) the process
+            # stop (collect) the process also WAIT for it to finish before printing the below message
             gammarf_util.console_message("STOP at {}"
                     .format(time.time()), MOD_NAME)
             # in the command make sure right dev, ppm etc. show up in the cmd string (ps)
