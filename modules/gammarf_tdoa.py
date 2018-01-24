@@ -59,6 +59,8 @@ class Tdoa(threading.Thread):
         self.gain = self.devmod.get_rtlsdr_gain(self.devid)
         self.offset = self.devmod.get_rtlsdr_offset(self.devid)
         self.ppm = self.devmod.get_rtlsdr_ppm(self.devid)
+        self.tdoa_max_freq = self.devmod.get_rtlsdr_maxfreq(self.devid)
+        self.tdoa_min_freq = self.devmod.get_rtlsdr_minfreq(self.devid)
 
         self.settings = settings
 
@@ -76,10 +78,7 @@ class Tdoa(threading.Thread):
             except KeyError:
                 continue
 
-            tdoa_max_freq = self.devmod.get_rtlsdr_maxfreq(self.devid)
-            tdoa_min_freq = self.devmod.get_rtlsdr_minfreq(self.devid)
-
-            if tdoafreq < tdoa_min_freq or tdoafreq > tdoa_max_freq:
+            if tdoafreq < self.tdoa_min_freq or tdoafreq > self.tdoa_max_freq:
                 req = {'request': REQ_TDOA_REJECT, 'requestor': requestor}
                 resp = self.connector.sendcmd(req)
                 time.sleep(ABORT_DELAY)
@@ -121,7 +120,18 @@ class Tdoa(threading.Thread):
 
             # need a job uuid
             jobid = resp['jobid']
+            gotick = resp['gotick']
             outfile = '/tmp/'+jobid+'.tdoa'
+
+            now = int(time.time())
+            while now < gotick:
+                now = int(time.time())
+                print("gotick: {}, now: {}".format(gotick, now))
+                time.sleep(.001)
+                continue
+
+            gammarf_util.console_message("GO at {}"
+                    .format(time.time()), MOD_NAME)
 
             ON_POSIX = 'posix' in builtin_module_names
             self.cmdpipe = Popen([self.cmd, "-d {}".format(self.sysdevid),
@@ -130,17 +140,16 @@ class Tdoa(threading.Thread):
                 "-n {}".format(SAMPLES), outfile], stdout=PIPE,
                 close_fds=ON_POSIX)
 
-            # something's wrong - need to tell the server when to deltee from the dict maybe, or maybe the server should do it at 'go- shouldn't see two messages on requestor about the same node (nor shoudl there be multipel files in /tmp)
             # stop (collect) the process
+            gammarf_util.console_message("STOP at {}"
+                    .format(time.time()), MOD_NAME)
             # in the command make sure right dev, ppm etc. show up in the cmd string (ps)
-            # save to file in /tmp w/ the uuid name
+            # save to file in /tmp w/ the uuid name (vrfy all stations save w/ the same uuid)
             # server has an sftp port (see gammarf.conf) that accepts only puts, clients put file w/ uuid before referencing, put-only server and uuid file names so secure (?)
                 # scp copies to /tmp for example (server default and restriction)
             # sftp/scp to server
             # send 'fin' w/ uuid so it can trigger the server-side relay
             # delete the tmp file
-            # don't go back to the top of the while loop until all data is sent to the server
-            # make sure you include the new conf format in the repo
 
 
 
