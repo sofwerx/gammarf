@@ -26,13 +26,12 @@ from sys import builtin_module_names
 import gammarf_util
 from gammarf_base import GrfModuleBase
 
-ABORT_DELAY = 2
-GO_DELAY = 2  # don't change this
-GO_SLEEP = 2  # don't change this
+ABORT_SLEEP = 2
+GO_WAIT = 5
 MOD_NAME = "tdoa"
 MODULE_TDOA = 7
 PROTOCOL_VERSION = 1
-QUERY_SLEEP = 5  # don't change this
+QUERY_SLEEP = 2
 REQ_TDOA_ACCEPT = 8
 REQ_TDOA_GO = 9
 REQ_TDOA_PUT = 5
@@ -76,36 +75,42 @@ class Tdoa(threading.Thread):
                 requestor = resp['requestor']
                 tdoafreq = resp['tdoafreq']
             except KeyError:
+                time.sleep(ABORT_SLEEP)
                 continue
 
-            if tdoafreq < self.tdoa_min_freq or tdoafreq > self.tdoa_max_freq:
+            fixed_tdoafreq = tdoafreq + self.offset
+            if fixed_tdoafreq < self.tdoa_min_freq or fixed_tdoafreq > self.tdoa_max_freq:
                 req = {'request': REQ_TDOA_REJECT, 'requestor': requestor}
                 resp = self.connector.sendcmd(req)
-                time.sleep(ABORT_DELAY)
+                time.sleep(ABORT_SLEEP)
                 continue
 
             # we will accept this tdoa task
             req = {'request': REQ_TDOA_ACCEPT, 'requestor': requestor}
             resp = self.connector.sendcmd(req)
             if resp['reply'] != 'ok':
-                time.sleep(ABORT_DELAY)
+                time.sleep(ABORT_SLEEP)
                 continue
-
-            # wait for other stations to accept / reject as well
-            time.sleep(GO_SLEEP)
 
             # ask the server if we should go ahead
-            req = {'request': REQ_TDOA_GO}
-            resp = self.connector.sendcmd(req)
-            if resp['reply'] != 'go':
-                time.sleep(ABORT_DELAY)
+            go_start = int(time.time())
+            go = False
+            while int(time.time()) < go_start + GO_WAIT:
+                req = {'request': REQ_TDOA_GO}
+                resp = self.connector.sendcmd(req)
+                if resp['reply'] == 'go':
+                    go = True
+                    break
+
+            if not go:
                 continue
 
-            refxmtr = resp['refxmtr']
             try:
-                refxmtr = int(refxmtr)
+                gotick = resp['gotick']
+                jobid = resp['jobid']
+                refxmtr = int(resp['refxmtr']) + self.offset
             except:
-                time.sleep(ABORT_DELAY)
+                time.sleep(ABORT_SLEEP)
                 continue
 
             if self.settings['print_tasks']:
@@ -113,21 +118,12 @@ class Tdoa(threading.Thread):
                         "(refxmtr: {})"
                 .format(tdoafreq, requestor, refxmtr), MOD_NAME)
 
-            time.sleep(GO_DELAY)  # wait for other stations
-
-            refxmtr = refxmtr + self.offset
-            tdoafreq = tdoafreq + self.offset
-
-            # need a job uuid
-            jobid = resp['jobid']
-            gotick = resp['gotick']
             outfile = '/tmp/'+jobid+'.tdoa'
 
             now = int(time.time())
             while now < gotick:
                 now = int(time.time())
                 time.sleep(.001)
-                continue
 
             gammarf_util.console_message("GO at {}"
                     .format(time.time()), MOD_NAME)
@@ -136,7 +132,7 @@ class Tdoa(threading.Thread):
             ON_POSIX = 'posix' in builtin_module_names
             self.cmdpipe = Popen([self.cmd, "-d {}".format(self.sysdevid),
                 "-p {}".format(self.ppm), "-g {}".format(self.gain),
-                "-f {}".format(refxmtr), "-h {}".format(tdoafreq),
+                "-f {}".format(refxmtr), "-h {}".format(fixed_tdoafreq),
                 "-n {}".format(SAMPLES), outfile], stdout=NULL,
                 stderr=STDOUT, close_fds=ON_POSIX)
 
