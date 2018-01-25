@@ -20,7 +20,7 @@
 import os
 import threading
 import time
-from subprocess import Popen, PIPE
+from subprocess import Popen, STDOUT
 from sys import builtin_module_names
 
 import gammarf_util
@@ -132,25 +132,27 @@ class Tdoa(threading.Thread):
             gammarf_util.console_message("GO at {}"
                     .format(time.time()), MOD_NAME)
 
+            NULL = open(os.devnull, 'w')
             ON_POSIX = 'posix' in builtin_module_names
             self.cmdpipe = Popen([self.cmd, "-d {}".format(self.sysdevid),
                 "-p {}".format(self.ppm), "-g {}".format(self.gain),
                 "-f {}".format(refxmtr), "-h {}".format(tdoafreq),
-                "-n {}".format(SAMPLES), outfile], stdout=PIPE,
-                close_fds=ON_POSIX)
+                "-n {}".format(SAMPLES), outfile], stdout=NULL,
+                stderr=STDOUT, close_fds=ON_POSIX)
 
-            # stop (collect) the process also WAIT for it to finish before printing the below message
+            self.cmdpipe.wait()
             gammarf_util.console_message("STOP at {}"
                     .format(time.time()), MOD_NAME)
-            # in the command make sure right dev, ppm etc. show up in the cmd string (ps)
-            # save to file in /tmp w/ the uuid name (vrfy all stations save w/ the same uuid)
-            # server has an sftp port (see gammarf.conf) that accepts only puts, clients put file w/ uuid before referencing, put-only server and uuid file names so secure (?)
-                # scp copies to /tmp for example (server default and restriction)
-            # sftp/scp to server
-            # send 'fin' w/ uuid so it can trigger the server-side relay
-            # delete the tmp file
 
 
+
+            # read the file byte by byte, send ea. byte to server
+            #data = {}
+            #data['module'] = MODULE_ADSB
+            #data['protocol'] = PROTOCOL_VERSION
+            #data['seqnum'] =
+            #data['jobid'] =
+            #self.connector.senddat(data)
 
 
 
