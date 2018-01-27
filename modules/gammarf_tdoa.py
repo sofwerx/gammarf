@@ -140,11 +140,9 @@ class Tdoa(threading.Thread):
             gammarf_util.console_message("STOP at {}"
                     .format(time.time()), MOD_NAME)
 
-
-
-            # read the file byte by byte, send ea. byte to server
+            # read the bytes, send to the server (make complex first?)
             #data = {}
-            #data['module'] = MODULE_ADSB
+            #data['module'] = MODULE_TDOA
             #data['protocol'] = PROTOCOL_VERSION
             #data['seqnum'] =
             #data['jobid'] =
