@@ -20,6 +20,7 @@
 import os
 import threading
 import time
+import numpy as np
 from subprocess import Popen, STDOUT
 from sys import builtin_module_names
 
@@ -37,7 +38,11 @@ REQ_TDOA_GO = 9
 REQ_TDOA_PUT = 5
 REQ_TDOA_QUERY = 6
 REQ_TDOA_REJECT = 7
-SAMPLES = 1e3  # don't change this
+SAMPLES = 1250000  # this and sample rate need to be the same on all nodes
+TDOA_SAMPLE_RATE = 2500000
+TDOA_TYPE_TGT = 0
+TDOA_TYPE_FIN = 1
+TDOA_TYPE_REF = 2
 
 
 def start(config):
@@ -133,6 +138,7 @@ class Tdoa(threading.Thread):
             self.cmdpipe = Popen([self.cmd, "-d {}".format(self.sysdevid),
                 "-p {}".format(self.ppm), "-g {}".format(self.gain),
                 "-f {}".format(refxmtr), "-h {}".format(fixed_tdoafreq),
+                "-s {}".format(TDOA_SAMPLE_RATE),
                 "-n {}".format(SAMPLES), outfile], stdout=NULL,
                 stderr=STDOUT, close_fds=ON_POSIX)
 
@@ -140,14 +146,37 @@ class Tdoa(threading.Thread):
             gammarf_util.console_message("STOP at {}"
                     .format(time.time()), MOD_NAME)
 
-            # read the bytes, send to the server (make complex first?)
-            #data = {}
-            #data['module'] = MODULE_TDOA
-            #data['protocol'] = PROTOCOL_VERSION
-            #data['seqnum'] =
-            #data['jobid'] =
-            #self.connector.senddat(data)
+            # get the phase bytes; assume intel architecture (byte order)
+            phases = np.fromfile(outfile, dtype=np.uint8)[::2]
+            section_len = int(len(phases)/3)
 
+            data = {}
+            data['module'] = MODULE_TDOA
+            data['protocol'] = PROTOCOL_VERSION
+            data['jobid'] = jobid
+
+            ref_phasediff = np.diff(phases[:section_len])
+            for seqnum in range(section_len-1):
+                data['type'] = TDOA_TYPE_REF
+                data['seqnum'] = seqnum
+                data['angle'] = int(ref_phasediff[seqnum])
+                self.connector.senddat(data)
+
+            target_phasediff = np.diff(phases[section_len:section_len*2])
+            ##### send target data, as above but with TDOA_TYPE_TGT
+
+
+
+
+
+            data['type'] = TDOA_TYPE_FIN
+            self.connector.senddat(data)
+            print("Sent TDOA data")
+            os.remove(outfile)
+
+            # remove dc component?
+            # manually correlate refxmtrs - get it right (experiment with ref types, etc.)
+            # automate: python lines up refxmtrs, calculates target location, messages all nodes, deletes from redis, web pop-up (with 'x' to close)
 
 
         return
