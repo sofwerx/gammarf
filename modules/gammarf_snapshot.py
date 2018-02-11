@@ -25,6 +25,7 @@ from uuid import uuid4
 import gammarf_util
 from gammarf_base import GrfModuleBase
 
+MAX_BW = int(100e6)
 MOD_NAME = "snapshot"
 MODULE_SNAPSHOT = 5
 PROTOCOL_VERSION = 1
@@ -129,6 +130,18 @@ class GrfModuleSnapshot(GrfModuleBase):
         minfreq = int(devmod.get_hackrf_minfreq()*1e6)
         if lowfreq < minfreq or highfreq > maxfreq:
             gammarf_util.console_message("frequency out of range",
+                    MOD_NAME)
+            return
+
+        if highfreq < lowfreq:
+            gammarf_util.console_message("invalid frequency range",
+                    MOD_NAME)
+            return
+
+
+        if highfreq - lowfreq > MAX_BW:
+            gammarf_util.console_message(
+                    "range exceeds maximum bandwidth of {}".format(MAX_BW),
                     MOD_NAME)
             return
 
