@@ -17,6 +17,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+####
+##
+##  * DO NOT USE THIS MODULE - IT IS NOT IMPLEMENTED ON THE SERVER SIDE *
+##
+####
+
+
+
+
 import os
 import threading
 import time
@@ -38,7 +47,7 @@ REQ_TDOA_GO = 9
 REQ_TDOA_PUT = 5
 REQ_TDOA_QUERY = 6
 REQ_TDOA_REJECT = 7
-SAMPLES = 1250000  # this and sample rate need to be the same on all nodes
+SAMPLES = 250000  # this and sample rate need to be the same on all nodes
 TDOA_SAMPLE_RATE = 2500000
 TDOA_TYPE_TGT = 0
 TDOA_TYPE_FIN = 1
