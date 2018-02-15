@@ -18,6 +18,10 @@ RUN cd /tmp; git clone https://github.com/keenerd/rtl-sdr
 RUN cd /tmp/rtl-sdr; mkdir build; cd build; cmake ..; make; make install
 RUN cd /3rdparty/librtlsdr-2freq; mkdir build; cd build; cmake ..; make
 
+# tpms
+RUN cd /tmp; git clone https://github.com/merbanan/rtl_433
+RUN cd /tmp/rtl_433; mkdir build; cd build; cmake ..; make; make install
+
 ADD ./requirements.txt /requirements.txt
 RUN pip3 install --upgrade pip
 RUN pip3 install -r /requirements.txt
@@ -28,4 +32,4 @@ ADD ./modules /modules
 
 RUN chmod +x /gammarf.py
 ENV PYTHONIOENCODING UTF-8
-CMD /gammarf.py
+#CMD /gammarf.py
