@@ -80,7 +80,7 @@ class Tpms(threading.Thread):
             try:
                 model = msg['model']
                 tpms_type = msg['type']
-                tpms_id = msg['id']
+                tpms_id = int(msg['id'], 16)
             except Exception:
                 continue
 
