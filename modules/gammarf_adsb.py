@@ -67,7 +67,6 @@ class Adsb(threading.Thread):
 
         while not self.stoprequest.isSet():
             msg = self.cmdpipe.stdout.readline().strip()
-
             if len(msg) == 0:
                 continue
 

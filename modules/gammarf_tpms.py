@@ -20,12 +20,14 @@
 import json
 import os
 import threading
+import time
 from subprocess import Popen, PIPE
 from sys import builtin_module_names
 
 import gammarf_util
 from gammarf_base import GrfModuleBase
 
+LOOP_SLEEP = 0.1
 MOD_NAME = "tpms"
 MODULE_TPMS = 8
 PROTOCOL_VERSION = 1
@@ -52,8 +54,9 @@ class Tpms(threading.Thread):
         self.settings = settings
 
         ON_POSIX = 'posix' in builtin_module_names
+        # no gain option b/c works best with '0' (auto) gain
         cmd_list = [cmd, "-d {}".format(sysdevid), "-p {}".format(ppm),
-                "-g {}".format(gain), "-F{}".format('json')]
+                "-F{}".format('json')]
         cmd_list.extend(["-R{}".format(i) for i in RTL_433_PROTOS])
         self.cmdpipe = Popen(cmd_list, stdout=PIPE, close_fds=ON_POSIX)
 
@@ -64,19 +67,19 @@ class Tpms(threading.Thread):
 
         while not self.stoprequest.isSet():
             msg = self.cmdpipe.stdout.readline().strip()
-
             if len(msg) == 0:
+                time.sleep(LOOP_SLEEP)
                 continue
 
             msg = msg.decode('utf-8')
             try:
                 msg = json.loads(msg)
-            except Exception:
+            except Exception as e:
                 continue
 
             try:
                 model = msg['model']
-                tmps_type = msg['type']
+                tpms_type = msg['type']
                 tpms_id = msg['id']
             except Exception:
                 continue
@@ -85,6 +88,11 @@ class Tpms(threading.Thread):
             data['type'] = tpms_type
             data['id'] = tpms_id
             self.connector.senddat(data)
+
+            if self.settings['print_all']:
+                gammarf_util.console_message("Model: {}, Type: {}, ID: {}"
+                        .format(model, tpms_type, tpms_id),
+                        MOD_NAME)
 
         try:
             self.cmdpipe.stdout.close()
