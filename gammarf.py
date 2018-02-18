@@ -476,7 +476,7 @@ def cmd_pwr(grfstate, args):
 
     pwr = system_mods['spectrum'].pwr(freq)
     if pwr:
-        print(pwr)
+        gammarf_util.console_message(pwr)
 
 def cmd_quit(grfstate):
     """Quit"""
