@@ -47,13 +47,13 @@ class Tpms(threading.Thread):
 
         self.connector = system_mods['connector']
         devmod = system_mods['devices']
-        gain = devmod.get_rtlsdr_gain(devid)
         ppm = devmod.get_rtlsdr_ppm(devid)
         sysdevid = devmod.get_sysdevid(devid)
 
         self.settings = settings
 
         ON_POSIX = 'posix' in builtin_module_names
+
         # no gain option b/c works best with '0' (auto) gain
         cmd_list = [cmd, "-d {}".format(sysdevid), "-p {}".format(ppm),
                 "-F{}".format('json')]
