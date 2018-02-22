@@ -28,13 +28,15 @@ def str_to_hz(strfreq):
         return None
 
     try:
-        if strfreq[len(strfreq)-1] == 'M':
+        if strfreq[len(strfreq)-1] == 'G':
+            outfreq = int(float(strfreq[:len(strfreq)-1])*1e9)
+        elif strfreq[len(strfreq)-1] == 'M':
             outfreq = int(float(strfreq[:len(strfreq)-1])*1e6)
         elif strfreq[len(strfreq)-1] == 'k':
             outfreq = int(float(strfreq[:len(strfreq)-1])*1e3)
         else:
             outfreq = int(strfreq)
-    except Exception:
+    except Exception as e:
         return None
 
     return outfreq
