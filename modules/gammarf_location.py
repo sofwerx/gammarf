@@ -20,6 +20,7 @@
 import threading
 import time
 from gps3 import agps3
+import os
 
 import gammarf_util
 from gammarf_base import GrfModuleBase
@@ -55,9 +56,11 @@ class GpsWorker(threading.Thread):
         self.stoprequest = threading.Event()
         threading.Thread.__init__(self)
 
+        host=os.environ.get('GPSD_HOST', '127.0.0.1')
+        port=int(os.environ.get('GPSD_PORT', '2947'))
         self.gps_socket = agps3.GPSDSocket()
         self.data_stream = agps3.DataStream()
-        self.gps_socket.connect()
+        self.gps_socket.connect(host=host, port=port)
         self.gps_socket.watch()
 
         self.current = {}
