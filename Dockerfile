@@ -32,4 +32,4 @@ ADD ./modules /modules
 
 RUN chmod +x /gammarf.py
 ENV PYTHONIOENCODING UTF-8
-#CMD /gammarf.py
+CMD /gammarf.py
