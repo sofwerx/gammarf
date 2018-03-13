@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+#Changed the Frequency limit from 5GHz to 6GHz
+
 import rtlsdr
 import string
 import sys
@@ -31,7 +33,7 @@ sys.path.insert(0, '3rdparty')
 import pylibhackrf
 
 # careful with these - spectrum will scan across this range
-HACKRF_DEFAULT_MAXSCAN = int(5000)  # MHz (reduce if you'd like, saves cpu)
+HACKRF_DEFAULT_MAXSCAN = int(6000)  # MHz (reduce if you'd like, saves cpu)
 HACKRF_DEFAULT_MINSCAN = int(50)  # don't change
 HACKRF_DEFAULT_STEP = 5000  # actual step may change
 
