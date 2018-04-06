@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# tpms module
+# ism433 module
 #
 # Joshua Davis (gammarf -*- covert.codes)
 # http://gammarf.io
@@ -28,16 +28,16 @@ import gammarf_util
 from gammarf_base import GrfModuleBase
 
 LOOP_SLEEP = 0.1
-MOD_NAME = "tpms"
-MODULE_TPMS = 8
+MOD_NAME = "ism433"
+MODULE_ISM433 = 8
 PROTOCOL_VERSION = 1
-RTL_433_PROTOS = [59, 60, 82, 88, 89, 90, 95]
+
 
 def start(config):
-    return GrfModuleTpms(config)
+    return GrfModuleISM433(config)
 
 
-class Tpms(threading.Thread):
+class ISM433(threading.Thread):
     def __init__(self, opts, system_mods, settings):
         self.stoprequest = threading.Event()
         threading.Thread.__init__(self)
@@ -57,12 +57,11 @@ class Tpms(threading.Thread):
         # no gain option b/c works best with '0' (auto) gain
         cmd_list = [cmd, "-d {}".format(sysdevid), "-p {}".format(ppm),
                 "-F{}".format('json')]
-        cmd_list.extend(["-R{}".format(i) for i in RTL_433_PROTOS])
         self.cmdpipe = Popen(cmd_list, stdout=PIPE, close_fds=ON_POSIX)
 
     def run(self):
         data = {}
-        data['module'] = MODULE_TPMS
+        data['module'] = MODULE_ISM433
         data['protocol'] = PROTOCOL_VERSION
 
         while not self.stoprequest.isSet():
@@ -78,20 +77,20 @@ class Tpms(threading.Thread):
                 continue
 
             try:
-                model = msg['model']
-                tpms_type = msg['type']
-                tpms_id = int(msg['id'], 16)
+                ism433_model = msg['model']
+                ism433_type = msg['type']
+                ism433_id = int(msg['id'], 16)
             except Exception:
                 continue
 
-            data['model'] = model
-            data['type'] = tpms_type
-            data['id'] = tpms_id
+            data['model'] = ism433_model
+            data['type'] = ism433_type
+            data['id'] = ism433_id
             self.connector.senddat(data)
 
             if self.settings['print_all']:
                 gammarf_util.console_message("Model: {}, Type: {}, ID: {}"
-                        .format(model, tpms_type, tpms_id),
+                        .format(ism433_model, ism433_type, ism433_id),
                         MOD_NAME)
 
         try:
@@ -106,15 +105,15 @@ class Tpms(threading.Thread):
 
     def join(self, timeout=None):
         self.stoprequest.set()
-        super(Tpms, self).join(timeout)
+        super(ISM433, self).join(timeout)
 
 
-class GrfModuleTpms(GrfModuleBase):
-    """ TPMS: Vehicle tire pressure
+class GrfModuleISM433(GrfModuleBase):
+    """ ISM433: ISM433 (TPMS, etc.)
 
-        Usage: run tpms devid
+        Usage: run ism433 devid
 
-        Example: run tpms 0
+        Example: run ism433 0
 
         Settings:
                 print_all: Print results as they're intercepted
@@ -130,7 +129,7 @@ class GrfModuleTpms(GrfModuleBase):
             raise Exception("executable rtl_433 not found in specified path")
 
         self.device_list = ["rtlsdr"]
-        self.description = "tpms module"
+        self.description = "ism433 module"
         self.settings = {'print_all': False}
         self.worker = None
         self.cmd = command
@@ -152,7 +151,7 @@ class GrfModuleTpms(GrfModuleBase):
         opts = {'cmd': self.cmd,
                 'devid': devid}
 
-        self.worker = Tpms(opts, self.system_mods, self.settings)
+        self.worker = ISM433(opts, self.system_mods, self.settings)
         self.worker.daemon = True
         self.worker.start()
 
