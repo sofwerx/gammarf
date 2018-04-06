@@ -16,7 +16,6 @@ RUN cd /tmp/hackrf-2017.02.1/host/build; cmake ..; make; make install; ldconfig
 # rtl-sdr
 RUN cd /tmp; git clone https://github.com/keenerd/rtl-sdr
 RUN cd /tmp/rtl-sdr; mkdir build; cd build; cmake ..; make; make install
-RUN cd /3rdparty/librtlsdr-2freq; mkdir build; cd build; cmake ..; make
 
 # tpms
 RUN cd /tmp; git clone https://github.com/merbanan/rtl_433
