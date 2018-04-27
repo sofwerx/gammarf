@@ -93,18 +93,18 @@ class ISM433(threading.Thread):
                         .format(ism433_model, ism433_type, ism433_id),
                         MOD_NAME)
 
-        try:
-            self.cmdpipe.stdout.close()
-            self.cmdpipe.kill()
-            os.kill(self.cmdpipe.pid, 9)
-            os.wait()
-        except:
-            pass
-
         return
+
 
     def join(self, timeout=None):
         self.stoprequest.set()
+        try:
+            self.cmdpipe.kill()
+            os.kill(self.cmdpipe.pid, 9)
+            os.wait()
+            self.cmdpipe.stdout.close()
+        except Exception as e:
+            pass
         super(ISM433, self).join(timeout)
 
 
