@@ -20,6 +20,6 @@ end of the Docker output.
 
 * Get the process ID: `# docker ps`
 
-* start the p25rx module in the grf client: run p25rx 9000 50000  (it will listen on port 50000, here)
+* start the p25rx module in the grf client: `run p25rx 9000 50000`  (it will listen on port 50000, here)
 
 * Forward the logs: `# docker logs --tail 1 -f [PID] | nc -u 127.0.0.1 50000`
