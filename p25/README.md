@@ -8,7 +8,7 @@ if you're unsure about syntax.)  This will tell the client to accept
 server.
 
 * Get `trunk-recorder` from [here](https://github.com/robotastic/trunk-recorder).
-Make sure to use version 3.
+Tested to work with trunk-recorder version 3.0.1
 
 * Configure.  Don't configure any analog or digital recorders (value should be '0')
 
