@@ -27,7 +27,7 @@ from gammarf_base import GrfModuleBase
 
 CALL_REGEX = r'[\S\s]+Call created for: ([0-9]+) [\S\s]+'
 LST_ADDR = "127.0.0.1"
-MOD_NAME = "p25rx"
+MOD_NAME = "p25log"
 MODULE_P25RX = 4
 PROTOCOL_VERSION = 1
 SOCK_BUFSZ  = 1024
@@ -93,10 +93,10 @@ class P25Rx(threading.Thread):
 class GrfModuleP25Receiver(GrfModuleBase):
     """ P25rx: Parse trunk-recorder lines received on a UDP port
 
-        Usage: run p25rx devid port
+        Usage: run p25log devid port
             devid must be >= 9000 (this is a pseudo-module)
 
-        Example: run p25rx 9000 5000
+        Example: run p25log 9000 50000
 
         Settings:
             print_all: Print each talkgroup as its identified
@@ -115,7 +115,7 @@ class GrfModuleP25Receiver(GrfModuleBase):
 
     def usage(self):
         gammarf_util.console_message("must include a port on "\
-                "the command line (eg. > p25rx 9000 51000)",
+                "the command line (eg. > p25log 9000 50000)",
                 MOD_NAME)
         return
 
