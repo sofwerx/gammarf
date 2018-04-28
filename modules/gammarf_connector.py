@@ -23,6 +23,7 @@ import time
 import threading
 import urllib3
 import zmq
+import queue
 from hashlib import md5
 from multiprocessing import Pipe
 from uuid import uuid4
@@ -37,6 +38,7 @@ HEARTBEAT_INT = 10
 LOOP_SLEEP = 0.5
 MOD_NAME = "connector"
 PIPE_POLL_TIMEOUT = 1000
+QUEUE_MAX = 100000
 RECONNECT_ATTEMPT_WAIT = 5  # s
 REQ_HEARTBEAT = 0
 REQ_INTERESTING_ADD = 11
@@ -60,6 +62,8 @@ class ConnectorWorker(threading.Thread):
         self.server_host = opts['server_host']
         self.dat_port = opts['dat_port']
         self.cmd_port = opts['cmd_port']
+
+        self.datq = queue.Queue(maxsize=QUEUE_MAX)
 
         self.gps_worker = system_mods['location']
         self.devmod = system_mods['devices']
@@ -163,9 +167,11 @@ class ConnectorWorker(threading.Thread):
                                 if job != self.devmod.get_hackrf_job()])
                 data['gpsstat'] = self.gps_worker.get_status()
 
+                data['dt'] = int(time.time())
                 data['rand'] = str(uuid4())[:8]
                 m = md5()
-                m.update((self.station_pass + data['rand']).encode('utf-8'))
+                m.update((self.station_pass + data['rand'] + str(data['dt']))
+                        .encode('utf-8'))
                 data['sign'] = m.hexdigest()[:12]
 
                 resp = self.sendcmd(data)
@@ -208,24 +214,25 @@ class ConnectorWorker(threading.Thread):
             time.sleep(LOOP_SLEEP)
 
     def senddat(self, data):
-        if not self.connected:
-            return
-
         data['stationid'] = self.stationid
+        data['dt'] = int(time.time())
         data.update(self.loc)
         data['rand'] = str(uuid4())[:8]
         m = md5()
-        m.update((self.station_pass + data['rand'])
+        m.update((self.station_pass + data['rand'] + str(data['dt']))
                 .encode('utf-8'))
         data['sign'] = m.hexdigest()[:12]
 
-        try:
-            self.datsock.send_string(json.dumps(data), zmq.NOBLOCK)
-        except Exception as e:
-            pass
-            #self.connected = False
-            #self.connect_message = "error sending to "\
-            #        "data socket: {}".format(e)
+        self.datq.put(data)
+
+        if not self.connected:
+            return
+
+        while not self.datq.empty():
+            try:
+                self.datsock.send_string(json.dumps(self.datq.get()), zmq.NOBLOCK)
+            except Exception as e:
+                return
 
     def sendcmd(self, data):
         with self.cmdlock:
@@ -234,9 +241,10 @@ class ConnectorWorker(threading.Thread):
 
             data['stationid'] = self.stationid
             data.update(self.loc)
+            data['dt'] = int(time.time())
             data['rand'] = str(uuid4())[:8]
             m = md5()
-            m.update((self.station_pass + data['rand'])
+            m.update((self.station_pass + data['rand'] + str(data['dt']))
                     .encode('utf-8'))
             data['sign'] = m.hexdigest()[:12]
 
