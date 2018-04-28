@@ -28,7 +28,7 @@ from gammarf_base import GrfModuleBase
 CALL_REGEX = r'[\S\s]+Call created for: ([0-9]+) [\S\s]+'
 LST_ADDR = "127.0.0.1"
 MOD_NAME = "p25log"
-MODULE_P25RX = 4
+MODULE_P25LOG = 4
 PROTOCOL_VERSION = 1
 SOCK_BUFSZ  = 1024
 
@@ -37,7 +37,7 @@ def start(config):
     return GrfModuleP25Receiver(config)
 
 
-class P25Rx(threading.Thread):
+class P25Log(threading.Thread):
     def __init__(self, port, system_mods, settings):
         threading.Thread.__init__(self)
         self.stoprequest = threading.Event()
@@ -48,7 +48,7 @@ class P25Rx(threading.Thread):
 
     def run(self):
         data = {}
-        data['module'] = MODULE_P25RX
+        data['module'] = MODULE_P25LOG
         data['protocol'] = PROTOCOL_VERSION
 
         self.lstsock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -63,12 +63,16 @@ class P25Rx(threading.Thread):
         while not self.stoprequest.isSet():
             for line in self.lstsock.makefile():
                 if '\t' in line:
-                    _, msg = line.split('\t', 1)
+                    tmp = line.split('\t')
                 else:
                     continue
 
-                if msg.startswith('Recording'):
-                    talkgroup = msg.split()[-1].strip()
+                if len(tmp) != 4:
+                    continue
+
+                msg = tmp[1]
+                if msg.startswith('TG:'):
+                    talkgroup = msg.split()[1].strip()
                 else:
                     continue
 
@@ -87,11 +91,11 @@ class P25Rx(threading.Thread):
 
     def join(self, timeout=None):
         self.stoprequest.set()
-        super(P25Rx, self).join(timeout)
+        super(P25Log, self).join(timeout)
 
 
 class GrfModuleP25Receiver(GrfModuleBase):
-    """ P25rx: Parse trunk-recorder lines received on a UDP port
+    """ P25log: Parse trunk-recorder lines received on a UDP port
 
         Usage: run p25log devid port
             devid must be >= 9000 (this is a pseudo-module)
@@ -142,7 +146,7 @@ class GrfModuleP25Receiver(GrfModuleBase):
             gammarf_util.console_message("bad port number", MOD_NAME)
             return
 
-        self.worker = P25Rx(port, self.system_mods, self.settings)
+        self.worker = P25Log(port, self.system_mods, self.settings)
         self.worker.daemon = True
         self.worker.start()
 
