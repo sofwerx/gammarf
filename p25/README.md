@@ -2,7 +2,7 @@
 Using ΓRF for P25 Digital Trunking
 ======================================
 
-* In the ΓRF client, run the p25rx module on a pseudo-device (type `mods`
+* In the ΓRF client, run the p25log module on a pseudo-device (type `mods`
 if you're unsure about syntax.)  This will tell the client to accept
 `trunk-recorder` log output on a UDP port, process it, and send it to the
 server.
@@ -20,6 +20,6 @@ end of the Docker output.
 
 * Get the process ID: `# docker ps`
 
-* start the p25rx module in the grf client: `run p25rx 9000 50000`  (it will listen on port 50000, here)
+* start the p25log module in the grf client: `run p25log 9000 50000`  (it will listen on port 50000, here)
 
 * Forward the logs: `# docker logs --tail 1 -f [PID] | nc -u 127.0.0.1 50000`
