@@ -25,7 +25,7 @@ import gammarf_util
 from gammarf_base import GrfModuleBase
 
 INTERESTING_REFRESH_INT = 10  # s
-LOOP_SLEEP = 2
+LOOP_SLEEP = 5
 MOD_NAME = "freqwatch"
 MODULE_FREQWATCH = 6
 PROTOCOL_VERSION = 1
