@@ -67,7 +67,7 @@ class Single(threading.Thread):
             self.sdr.ppm = self.ppm
         except:
             gammarf_util.console_message("error initializing device", MOD_NAME)
-            self.devmod.freedev(self.devid)
+            devmod.freedev(self.devid)
             self.sdr.close()
             return
 

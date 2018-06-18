@@ -237,6 +237,7 @@ def pseudo_startup_tasks(grfstate):
             args = None
 
         if module in system_mods or module not in loadedmods:
+            devid += 1
             continue
 
         if not 'pseudo' in loadedmods[module].devices():

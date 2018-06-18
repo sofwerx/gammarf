@@ -32,7 +32,6 @@ LOOP_SLEEP = 2
 MOD_NAME = "scanner"
 MODULE_SCANNER = 1
 PROTOCOL_VERSION = 1
-SEND_SLEEP = 0.001
 
 
 def start(config):
@@ -148,8 +147,7 @@ class Scanner(threading.Thread):
 
                         try:
                             self.connector.senddat(data)
-                            SEND_SLEEP = 0.002
-                        except:
+                        except Exception as e:
                             pass
 
                 freqmap[freq] = fent
